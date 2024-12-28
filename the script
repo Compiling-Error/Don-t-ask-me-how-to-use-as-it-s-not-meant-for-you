@@ -106,6 +106,6 @@ game:GetService("RunService").RenderStepped:Connect(function()
 end)
 
 while true do
-    task.wait(10)
+    task.wait(1)
     rescanFolders()
 end
