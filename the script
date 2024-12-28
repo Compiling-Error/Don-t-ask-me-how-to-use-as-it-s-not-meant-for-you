@@ -1,0 +1,111 @@
+local w = game.Workspace
+local p = game.Players.LocalPlayer
+local g = p:WaitForChild("PlayerGui")
+local c = w.CurrentCamera
+
+local d = w:WaitForChild("Objects"):WaitForChild("Drops")
+local f = w:WaitForChild("Map"):WaitForChild("ForageSpots")
+
+local s = Instance.new("ScreenGui", g)
+local e = Instance.new("TextLabel", s)
+e.Size = UDim2.new(0, 400, 0, 200)
+e.Position = UDim2.new(0.5, -200, 0.5, -100)
+e.BackgroundTransparency = 0.5
+e.BackgroundColor3 = Color3.new(1, 0, 0)
+e.TextColor3 = Color3.new(1, 1, 1)
+e.TextStrokeTransparency = 0.5
+e.TextSize = 24
+e.TextWrapped = true
+e.Visible = false
+e.Text = "Error: Missing items:\n"
+
+local m = {}
+local ml = {}
+local markerMap = {}
+
+local function addMarker(t, i, n)
+    local x = Instance.new("TextLabel", s)
+    x.Size = UDim2.new(0, 100, 0, 50)
+    x.BackgroundTransparency = 1
+    
+    if n == "Talisman" or n == "Cursebloom" then
+        x.TextColor3 = Color3.new(1, 0, 0)
+    else
+        x.TextColor3 = Color3.new(0, 0, 1)
+    end
+
+    x.TextStrokeTransparency = 0.5
+    x.TextScaled = true
+    x.Font = Enum.Font.SourceSansBold
+    x.Text = n
+    x.Visible = false
+    m[t] = m[t] or {}
+    table.insert(m[t], x)
+    markerMap[x] = i
+end
+
+local function updateErrorGui()
+    e.Visible = #ml > 0
+    e.Text = "Error: Missing items:\n" .. table.concat(ml, "\n")
+end
+
+local function getItemType(i)
+    return i:IsA("Model") and i.Name or "Unknown"
+end
+
+local function clearAllMarkers()
+    for t, group in pairs(m) do
+        for _, x in ipairs(group) do
+            x:Destroy()
+            markerMap[x] = nil
+        end
+        m[t] = nil
+    end
+    ml = {}
+end
+
+local function rescanFolders()
+    clearAllMarkers()
+    -- Forage spots
+    for _, i in ipairs(f:GetChildren()) do
+        if i.Name ~= "Spring Puff" and i.Name ~= "Frost Petal" then
+            addMarker(getItemType(i), i, i.Name)
+        end
+    end
+
+    for _, i in ipairs(d:GetChildren()) do
+        local r = i:FindFirstChild("Root") or i:FindFirstChild("Handle")
+        if r then
+            addMarker(getItemType(i), i, i.Name)
+        else
+            table.insert(ml, i.Name)
+        end
+    end
+
+    updateErrorGui()
+end
+
+rescanFolders()
+
+game:GetService("RunService").RenderStepped:Connect(function()
+    for _, group in pairs(m) do
+        for _, x in ipairs(group) do
+            local item = markerMap[x]
+            local part = item:FindFirstChild("Root") or item:FindFirstChild("Handle") or item
+            if part and part:IsA("BasePart") then
+                local sp, onScreen = c:WorldToViewportPoint(part.Position)
+                x.Visible = onScreen
+                if onScreen then
+                    x.Position = UDim2.new(0, sp.X - 50, 0, sp.Y - 25)
+                end
+            else
+                x.Visible = false
+            end
+        end
+    end
+end)
+
+while true do
+    task.wait(10)
+    rescanFolders()
+end
