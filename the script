@@ -68,7 +68,7 @@ local function rescanFolders()
     clearAllMarkers()
     -- Forage spots
     for _, i in ipairs(f:GetChildren()) do
-        if i.Name ~= "Spring Puff" and i.Name ~= "Frost Petal" then
+        if i.Name ~= "Spring Puff" and i.Name ~= "Frost Petal" and i.Name ~= "Chest" then
             addMarker(getItemType(i), i, i.Name)
         end
     end
